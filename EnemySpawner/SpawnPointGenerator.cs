@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -10,46 +11,60 @@ namespace EnemySpawner
     int id;
     public List<Enemy> generateEnemies(Maze maze)
     {
-      id = 0;
-      bool[,] blocks = new bool[17, 9];
+      List<Enemy> enemies = new List<Enemy>();
+      StreamReader reader = new StreamReader("currentId.txt");
+      id = Int32.Parse(reader.ReadLine());
+      reader.Dispose();
+
+      bool[,] blocks = new bool[18, 9];
       var rng = new Random();
 
-      for (int i=0; i<17;i++)
+      for (int i=0; i<18;i++)
       {
         for(int j=0; j<9;j++)
         {
           blocks[i, j] = false;
+
+          if(i==17)
+          {
+            blocks[i, j] = true;
+          }
         }
       }
 
       foreach(BlockPosition block in maze.maze)
       {
-        blocks[block.x/3, block.y/3] = true;
+        blocks[block.x/3 , block.y/3] = true;
       }
 
-      List<Enemy> enemies = new List<Enemy>();
-      enemies.AddRange(generateSideways(blocks, rng));
-      //enemies.AddRange(generateUpDown(blocks, rng));
+      enemies.AddRange(generateSidewaysWalker(blocks, rng));
+      enemies.AddRange(generateUpDownWalker(blocks, rng));
+
+      StreamWriter writer = new StreamWriter("currentId.txt");
+      writer.Write(id.ToString());
+      writer.Dispose();
       return enemies;
     }
 
-    private List<Enemy> generateSideways(bool[,] maze, Random rng)
+    private List<Enemy> generateSidewaysWalker(bool[,] maze, Random rng)
     {
-      List<int> lines = new List<int>();
       List<Enemy> sidewaysEnemies = new List<Enemy>();
-      for(int i=0; i<17;i++)
+      for(int i=0; i<18;i++)
       {
         for (int j = 0; j < 9; j++)
         {
-          if(!lines.Contains(j) && maze[i,j]==false && (i==0 || maze[i-1, j] == true))
+          if(maze[i,j]==false && ((i==0|| (i>0 && maze[i-1, j] == true)) && (i<16 && maze[i+1, j] == false)))
           {
-            //if(rng.Next(0, 5) == 0)
-            //{
+            int enemyXEnd = 0;
+            int counterstart = i;
+            while(!maze[counterstart+1, j])
+            {
+              counterstart++;
+              enemyXEnd++;
+            }
 
-              sidewaysEnemies.Add(new Enemy { EnemyID = 0, startX = i * 3, startY = j * 3, endX=i*3+3, endY=j*3+3, Id = id });
+              sidewaysEnemies.Add(new Enemy { EnemyID = 1, startX = i * 3, startY = j * 3, endX=(i+enemyXEnd)*3, endY=j*3, Id = id });
               id++;
-              lines.Add(j);
-            //}
           }
         }
       }
@@ -57,27 +72,34 @@ namespace EnemySpawner
       return sidewaysEnemies;
     }
 
-    private List<Enemy> generateUpDown(bool[,] maze, Random rng)
+    private List<Enemy> generateUpDownWalker(bool[,] maze, Random rng)
     {
-      List<int> column = new List<int>();
-      List<Enemy> updownEnemies = new List<Enemy>();
-      for (int j = 0; j < 9; j++)
+      List<Enemy> upDownEnemies = new List<Enemy>();
+      for (int i = 0; i < 17; i++)
       {
-        for (int i = 0; i < 17; i++)
+        for (int j = 1; j < 9; j++)
         {
-          if (!column.Contains(i) && maze[i, j] == false && (j == 0 || maze[i, j-1] == true))
+          if (maze[i, j] == false && ((j == 0 || (j > 0 && maze[i, j-1] == true)) && (j < 7 && maze[i , j+1] == false)))
           {
-            if (rng.Next(0, 9) == 0)
+            int enemyYEnd = 0;
+            int counterstart = j;
+            while (!maze[i, counterstart+1])
             {
-              updownEnemies.Add(new Enemy { EnemyID = 0, startX = i * 3, startY = j * 3, endX = i * 3 + 3, endY = j * 3 + 3, Id = id });
-              id++;
-              column.Add(i);
+              counterstart++;
+              enemyYEnd++;
+              if(counterstart>=8)
+              {
+                break;
+              }
             }
+
+            upDownEnemies.Add(new Enemy { EnemyID = 2, startX = i * 3, startY = j * 3, endX = i * 3, endY = (j-enemyYEnd) * 3, Id = id });
+            id++;
           }
         }
       }
 
-      return updownEnemies;
+      return upDownEnemies;
     }
   }
 }
