@@ -8,7 +8,7 @@ namespace EnemySpawner
   public class Maze
   {
     public List<BlockPosition> maze { get; set; }
-    Maze()
+    public Maze()
     {
       maze = new List<BlockPosition>();
     }

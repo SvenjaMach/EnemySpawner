@@ -18,6 +18,11 @@ namespace EnemySpawner
       string newMaze2 = JsonSerializer.Serialize(helper);
 
       var maze =  CallRESTPost("https://localhost:44334/mazegenerator", newMaze2);
+      if(maze == null || maze.Length<=1)
+      {
+        return new Maze();
+      }
+
       return JsonSerializer.Deserialize<Maze>(maze);
     }
 
